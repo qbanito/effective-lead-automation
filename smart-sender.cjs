@@ -17,9 +17,9 @@ if (!RESEND_API_KEY) {
   process.exit(1);
 }
 
-const DAILY_LIMIT = 20;
-const MIN_DELAY_MS = 3 * 60 * 1000; // 3 minutes
-const MAX_DELAY_MS = 7 * 60 * 1000; // 7 minutes
+const DAILY_LIMIT = 50;
+const MIN_DELAY_MS = 2 * 60 * 1000; // 2 minutes
+const MAX_DELAY_MS = 4 * 60 * 1000; // 4 minutes
 
 const resend = new Resend(RESEND_API_KEY);
 

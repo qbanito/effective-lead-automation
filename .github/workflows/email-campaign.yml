@@ -31,6 +31,22 @@ jobs:
           
       - name: Install dependencies
         run: npm install
+      
+      - name: Check if resurrect needed
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: |
+          echo "Checking lead status..."
+          node lead-resurrect.cjs status || true
+          
+      - name: Auto-resurrect leads if low
+        if: ${{ github.event.inputs.mode != 'status' }}
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: |
+          echo "Running auto-resurrect if needed..."
+          node lead-resurrect.cjs run || echo "Resurrect skipped or no APIFY_TOKEN"
+        continue-on-error: true
         
       - name: Run email campaign
         env:
@@ -45,6 +61,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add email-tracking.json || true
+          git add email-tracking.json leads-test.json || true
           git diff --staged --quiet || git commit -m "chore: Update email tracking [skip ci]"
           git push || true
