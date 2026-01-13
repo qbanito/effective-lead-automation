@@ -15,6 +15,10 @@ const AUDIO_1_URL = `${SITE_URL}/content/Permanent_AI_Lead_Infrastructure_Cuts_C
 const AUDIO_2_URL = `${SITE_URL}/content/The_7-Day_Enterprise_Sales_Automation_System.m4a`;
 const RESOURCES_PAGE_URL = `${SITE_URL}/#resources`;
 
+// AI Sales Agent (ElevenLabs)
+const AGENT_ID = 'agent_0201kewhjjnzej7tcwt33v9sv605';
+const TALK_TO_ALEX_URL = `${SITE_URL}/talk-to-alex`;
+
 // Contact Information
 const CONTACT = {
   name: 'Neiver Alvarez',
@@ -243,6 +247,26 @@ function getResourcesBox() {
 }
 
 /**
+ * AI Sales Agent CTA - Talk to Alex
+ */
+function getAgentCTA() {
+  return `
+  <div style="margin: 28px 0; text-align: center;">
+    <a href="${TALK_TO_ALEX_URL}" target="_blank" style="display: inline-block; text-decoration: none; width: 100%; max-width: 400px;">
+      <div style="background: linear-gradient(135deg, #00C6B3 0%, #00A89C 100%); border-radius: 12px; padding: 24px; box-shadow: 0 4px 15px rgba(0, 198, 179, 0.3);">
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+          <span style="display: inline-block; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px #22c55e;"></span>
+          <span style="color: white; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">AI Consultant Online</span>
+        </div>
+        <p style="margin: 0 0 8px 0; color: white; font-size: 20px; font-weight: 600;">🎙️ Talk to Alex Now</p>
+        <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 14px;">Have a real conversation with our AI sales consultant</p>
+      </div>
+      <p style="margin: 10px 0 0 0; color: #6b7280; font-size: 12px;">Voice or text • Available 24/7 • Get instant answers</p>
+    </a>
+  </div>`;
+}
+
+/**
  * Email Sequence Templates
  */
 const emailSequence = [
@@ -356,9 +380,11 @@ const emailSequence = [
 
   ${getVideoThumbnail('small')}
 
-  <p style="margin: 0 0 20px 0; font-size: 16px;">
-    <a href="${CALENDLY_URL}" style="color: #2563eb; text-decoration: none; font-weight: 500;">→ See if it makes sense for ${data.company}</a>
-  </p>
+  <p style="margin: 0 0 20px 0; font-size: 16px;">Have questions? Talk to our AI consultant Alex - available 24/7:</p>
+
+  ${getAgentCTA()}
+
+  <p style="margin: 0 0 20px 0; font-size: 16px;">Or if you prefer, <a href="${CALENDLY_URL}" style="color: #2563eb; text-decoration: none; font-weight: 500;">book a call directly →</a></p>
 
   ${getSignature()}
 
@@ -391,7 +417,11 @@ const emailSequence = [
   
   <p style="margin: 0 0 20px 0; font-size: 16px;">If yes, <a href="${CALENDLY_URL}" style="color: #2563eb; text-decoration: none; font-weight: 500;">let's find 15 minutes</a> to see if we can help.</p>
   
-  <p style="margin: 0 0 20px 0; font-size: 16px;">If not, just let me know and I'll stop reaching out.</p>
+  <p style="margin: 0 0 20px 0; font-size: 16px;">Or chat with our AI consultant first - no commitment:</p>
+
+  ${getAgentCTA()}
+
+  <p style="margin: 0 0 20px 0; font-size: 16px;">If this isn't a priority, just let me know and I'll stop reaching out.</p>
 
   ${getSignature()}
 
@@ -479,6 +509,7 @@ module.exports = {
   getVideoThumbnail,
   getResourcesBox,
   getSignature,
+  getAgentCTA,
   VIDEO_URL,
   VIDEO_THUMBNAIL,
   CALENDLY_URL,
@@ -486,6 +517,8 @@ module.exports = {
   AUDIO_1_URL,
   AUDIO_2_URL,
   RESOURCES_PAGE_URL,
+  TALK_TO_ALEX_URL,
+  AGENT_ID,
   SITE_URL,
   CONTACT
 };
