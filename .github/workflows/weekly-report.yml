@@ -1,0 +1,86 @@
+name: Weekly Lead Report
+
+on:
+  # Run every Monday at 8 AM EST
+  schedule:
+    - cron: '0 13 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📂 Restore leads database
+        uses: actions/cache@v4
+        with:
+          path: data/
+          key: leads-database-
+          restore-keys: |
+            leads-database-
+
+      - name: 📊 Generate Weekly Report
+        id: report
+        run: |
+          echo "## 📈 Weekly Lead Generation Report" >> report.md
+          echo "" >> report.md
+          echo "**Report Generated:** $(date)" >> report.md
+          echo "" >> report.md
+          
+          if [ -f "data/leads.json" ]; then
+            TOTAL_LEADS=$(cat data/leads.json | jq 'length')
+            NEW_LEADS=$(cat data/leads.json | jq '[.[] | select(.status == "new")] | length')
+            CONTACTED=$(cat data/leads.json | jq '[.[] | select(.status == "contacted")] | length')
+            
+            echo "### 👥 Lead Statistics" >> report.md
+            echo "" >> report.md
+            echo "| Metric | Count |" >> report.md
+            echo "|--------|-------|" >> report.md
+            echo "| Total Leads | $TOTAL_LEADS |" >> report.md
+            echo "| New (Uncontacted) | $NEW_LEADS |" >> report.md
+            echo "| Contacted | $CONTACTED |" >> report.md
+            echo "" >> report.md
+          else
+            echo "⚠️ No leads database found." >> report.md
+          fi
+          
+          if [ -f "data/sent_emails.json" ]; then
+            TOTAL_SENT=$(cat data/sent_emails.json | jq '[.[] | select(.success == true)] | length')
+            FAILED=$(cat data/sent_emails.json | jq '[.[] | select(.success == false)] | length')
+            
+            # Last 7 days
+            WEEK_AGO=$(date -d "7 days ago" +%Y-%m-%d)
+            SENT_THIS_WEEK=$(cat data/sent_emails.json | jq '[.[] | select(.sentAt >= "'"$WEEK_AGO"'" and .success == true)] | length')
+            
+            echo "### 📧 Email Statistics" >> report.md
+            echo "" >> report.md
+            echo "| Metric | Count |" >> report.md
+            echo "|--------|-------|" >> report.md
+            echo "| Sent This Week | $SENT_THIS_WEEK |" >> report.md
+            echo "| Total Sent (All Time) | $TOTAL_SENT |" >> report.md
+            echo "| Failed | $FAILED |" >> report.md
+            echo "" >> report.md
+            
+            if [ $TOTAL_SENT -gt 0 ]; then
+              SUCCESS_RATE=$(echo "scale=1; ($TOTAL_SENT * 100) / ($TOTAL_SENT + $FAILED)" | bc)
+              echo "**Success Rate:** $SUCCESS_RATE%" >> report.md
+            fi
+          fi
+          
+          echo "" >> report.md
+          echo "---" >> report.md
+          echo "*Automated report by Effective Lead Marketing*" >> report.md
+          
+          cat report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report-${{ github.run_number }}
+          path: report.md
+          retention-days: 90

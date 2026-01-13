@@ -1,0 +1,116 @@
+name: Lead Automation Pipeline
+
+on:
+  # Run daily at 9 AM EST (14:00 UTC)
+  schedule:
+    - cron: '0 14 * * 1-5'  # Monday to Friday
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - scrape-only
+          - email-only
+      max_emails:
+        description: 'Maximum emails to send (optional)'
+        required: false
+        default: '50'
+        type: string
+
+env:
+  APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+  FROM_NAME: ${{ secrets.FROM_NAME }}
+  TARGET_INDUSTRY: ${{ vars.TARGET_INDUSTRY || 'SaaS,Consulting,Legal,Financial Services' }}
+  TARGET_LOCATION: ${{ vars.TARGET_LOCATION || 'United States' }}
+
+jobs:
+  lead-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build TypeScript
+        run: npm run build
+
+      - name: 📂 Restore leads database
+        uses: actions/cache@v4
+        with:
+          path: data/
+          key: leads-database-${{ github.run_id }}
+          restore-keys: |
+            leads-database-
+
+      - name: 🚀 Run Lead Automation
+        run: |
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          
+          case $MODE in
+            "scrape-only")
+              echo "Running scraper only..."
+              npm run start -- --scrape-only
+              ;;
+            "email-only")
+              echo "Running email campaign only..."
+              npm run start -- --email-only
+              ;;
+            *)
+              echo "Running full pipeline..."
+              npm run start
+              ;;
+          esac
+
+      - name: 💾 Save leads database
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/
+          key: leads-database-${{ github.run_id }}
+
+      - name: 📊 Generate Report
+        if: always()
+        run: |
+          echo "## 📊 Lead Automation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Mode:** ${{ github.event.inputs.mode || 'full' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "data/leads.json" ]; then
+            TOTAL_LEADS=$(cat data/leads.json | jq 'length')
+            echo "**Total Leads in Database:** $TOTAL_LEADS" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -f "data/sent_emails.json" ]; then
+            SENT_TODAY=$(cat data/sent_emails.json | jq '[.[] | select(.sentAt | startswith("'"$(date +%Y-%m-%d)"'"))] | length')
+            TOTAL_SENT=$(cat data/sent_emails.json | jq '[.[] | select(.success == true)] | length')
+            echo "**Emails Sent Today:** $SENT_TODAY" >> $GITHUB_STEP_SUMMARY
+            echo "**Total Emails Sent:** $TOTAL_SENT" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: campaign-data-${{ github.run_number }}
+          path: |
+            data/*.json
+          retention-days: 30

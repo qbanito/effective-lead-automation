@@ -1,0 +1,50 @@
+name: Daily Email Campaign
+
+on:
+  schedule:
+    # Runs at 9:00 AM EST (14:00 UTC) Monday to Friday
+    - cron: '0 14 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: true
+        default: 'run'
+        type: choice
+        options:
+          - run
+          - dry-run
+          - status
+
+jobs:
+  send-emails:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run email campaign
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'run' }}"
+          echo "Running campaign in $MODE mode..."
+          node smart-sender.cjs $MODE
+          
+      - name: Commit tracking updates
+        if: ${{ github.event.inputs.mode != 'dry-run' && github.event.inputs.mode != 'status' }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add email-tracking.json || true
+          git diff --staged --quiet || git commit -m "chore: Update email tracking [skip ci]"
+          git push || true
