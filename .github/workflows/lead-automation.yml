@@ -24,7 +24,7 @@ on:
         type: string
 
 env:
-  APIFY_API_TOKEN: ${{ secrets.APIFY_TOKEN }}
+  APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
   FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
   FROM_NAME: ${{ secrets.FROM_NAME }}
