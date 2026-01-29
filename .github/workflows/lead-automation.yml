@@ -1,11 +1,8 @@
 name: Lead Automation Pipeline
 
 on:
-  # Run daily at 9 AM EST (14:00 UTC)
   schedule:
-    - cron: '0 14 * * 1-5'  # Monday to Friday
-  
-  # Allow manual trigger
+    - cron: '0 14 * * 1-5'
   workflow_dispatch:
     inputs:
       mode:
@@ -37,30 +34,30 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📦 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: 📚 Install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: 🔨 Build TypeScript
+      - name: Build TypeScript
         run: npm run build
 
-      - name: 📂 Restore leads database
-        uses: actions/cache@v4
+      - name: Restore leads database
+        uses: actions/cache/restore@v4
         with:
           path: data/
-          key: leads-database-${{ github.run_id }}
+          key: leads-database-main
           restore-keys: |
             leads-database-
 
-      - name: 🚀 Run Lead Automation
+      - name: Run Lead Automation
         run: |
           MODE="${{ github.event.inputs.mode || 'full' }}"
           
@@ -79,17 +76,17 @@ jobs:
               ;;
           esac
 
-      - name: 💾 Save leads database
+      - name: Save leads database
         uses: actions/cache/save@v4
         if: always()
         with:
           path: data/
-          key: leads-database-${{ github.run_id }}
+          key: leads-database-main
 
-      - name: 📊 Generate Report
+      - name: Generate Report
         if: always()
         run: |
-          echo "## 📊 Lead Automation Report" >> $GITHUB_STEP_SUMMARY
+          echo "## Lead Automation Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Run Date:** $(date)" >> $GITHUB_STEP_SUMMARY
           echo "**Mode:** ${{ github.event.inputs.mode || 'full' }}" >> $GITHUB_STEP_SUMMARY
@@ -107,7 +104,7 @@ jobs:
             echo "**Total Emails Sent:** $TOTAL_SENT" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: 📤 Upload artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -115,5 +112,3 @@ jobs:
           path: |
             data/*.json
           retention-days: 30
-
-
